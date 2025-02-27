@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@utility message-bubble {
+  max-width: 100%;
+  border-radius: theme(borderRadius.lg);
+  padding: theme(spacing.3);
+  font-size: theme(fontSize.sm);
+  word-break: break-word;
+}
+
+@utility sent-bubble {
+  background-color: theme(colors.blue.600);
+  color: theme(colors.white);
+  border-end-end-radius: 0;
+}
+
+@utility received-bubble {
+  background-color: theme(colors.gray.100);
+  color: theme(colors.gray.900);
+  border-end-start-radius: 0;
+}
+
+@utility avatar-base {
+  width: theme(spacing.8);
+  height: theme(spacing.8);
+  border-radius: theme(borderRadius.full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: theme(fontSize.xs);
+  font-weight: theme(fontWeight.medium);
+}
+
+@utility chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: theme(screens.2xl);
+  margin-inline: auto;
+  background-color: theme(colors.white);
+  box-shadow: theme(boxShadow.lg);
+}
+
+@theme {
+  --color-whatsapp-green: #00a884;
+  --color-message-in: #ffffff;
+  --color-message-out: #d9fdd3;
+}
