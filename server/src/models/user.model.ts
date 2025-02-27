@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import { Document, Schema, model } from "mongoose";
 
 type UserDocument = Document & {
-  _id: string;
   email: string;
   name: string;
   username: string;

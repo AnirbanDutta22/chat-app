@@ -13,11 +13,6 @@ const otpSchema = new Schema(
       type: String,
       required: true,
     },
-    userType: {
-      type: String,
-      required: true,
-      enum: ["admin", "govt", "user"], // These values match our model names
-    },
     expiresAt: Date,
   },
   { timestamps: true }
