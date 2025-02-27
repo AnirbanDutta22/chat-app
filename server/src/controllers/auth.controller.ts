@@ -1,4 +1,5 @@
 import User from "../models/user.model";
+import TempUser from "../models/tempUser.model";
 import asyncHandler from "../utils/asyncHandler";
 import { ApiError } from "../utils/customErrorHandler";
 import jwt, { JwtPayload } from "jsonwebtoken";
@@ -6,6 +7,33 @@ import ResponseHandler from "../utils/responseHandler";
 import Otp from "../models/otp.model";
 import nodemailer from "nodemailer";
 import { Request, Response } from "express";
+import bcrypt from "bcrypt";
+import { generateFromEmail } from "unique-username-generator";
+import { AuthenticatedRequest } from "../types/auth.types";
+
+interface SMTPConfig {
+  service?: string;
+  host?: string;
+  port?: number;
+  secure?: boolean;
+  auth: {
+    user: string;
+    pass: string;
+  };
+}
+
+const smtpConfig: SMTPConfig = {
+  service: process.env.SMTP_SERVICE,
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: Boolean(process.env.SMTP_SECURE),
+  auth: {
+    user: process.env.SMTP_USER!,
+    pass: process.env.SMTP_PASSWORD!,
+  },
+};
+//configure transporter
+const transporter = nodemailer.createTransport(smtpConfig);
 
 //access token refresh token generating utility method
 const generateTokens = async (userId) => {
@@ -22,57 +50,68 @@ const generateTokens = async (userId) => {
   }
 };
 
-//send otp to email
+//send email for verification
 const sendEmailVerificationOTP = async ({ _id, email }) => {
   try {
     // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit OTP
-    const expiresAt = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("OTP:", otp);
+    const expiresAt = Date.now() + 10 * 60 * 1000;
 
     // Save OTP in the database
-    const newOtp = new Otp({
+    await Otp.create({
       userId: _id,
-      userType: "user",
       otp,
       expiresAt,
     });
-    await newOtp.save();
 
-    // Send OTP via email using nodemailer
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER, // sender email
-        pass: process.env.EMAIL_PASS, // sender password
-      },
-    });
-
+    // Email content
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"Chat Application" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Chat Application OTP",
-      html: `<p>Your OTP code is <b>${otp}</b>. It expires in 10 minutes.</p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Your Verification Code</h2>
+          <p style="font-size: 16px;">Use the following OTP to verify your email:</p>
+          <div style="background: #f3f4f6; padding: 20px; border-radius: 5px; text-align: center;">
+            <strong style="font-size: 24px; letter-spacing: 2px;">${otp}</strong>
+          </div>
+          <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
+            This OTP will expire in 10 minutes.
+          </p>
+        </div>
+      `,
     };
 
-    const sentMail = await transporter.sendMail(mailOptions);
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Message sent: %s", info.messageId);
 
-    if (!sentMail) {
-      throw new ApiError(500, "Failed to send OTP !");
+    return "OTP sent successfully! Please verify your email!";
+  } catch (error) {
+    console.error("Email sending error:", error);
+
+    // Handle specific Nodemailer errors
+    if (error.code === "ECONNECTION") {
+      throw new ApiError(500, "Failed to connect to email server");
     }
 
-    console.log("OTP sent successfully !");
-  } catch (error) {
-    throw new ApiError(500, "Something went wrong ! Resend OTP !");
+    if (error.code === "EAUTH") {
+      throw new ApiError(500, "Authentication failed for email service");
+    }
+
+    throw new ApiError(500, "Something went wrong! Resend OTP!");
   }
 };
 
 //register user
 export const registerUser = asyncHandler(
   async (req: Request, res: Response) => {
-    const { fullName, email, password } = req.body;
+    const { name, email, password } = req.body;
 
     //checking if any field is unfilled
-    if (!fullName || !email || !password) {
+    if (!name || !email || !password) {
       throw new ApiError(400, "All fields are required !");
     }
 
@@ -83,29 +122,83 @@ export const registerUser = asyncHandler(
     }
 
     //storing user's info without verifying email
-    const user = await User.create({
-      fullName,
+    const user = await TempUser.create({
+      name,
       email,
       password,
     });
 
-    await user
-      .save()
-      .then((response) => {
-        // console.log(response);
-        sendEmailVerificationOTP({ _id: response._id, email: response.email });
-        res.json({
-          status: 201,
-          message: "User registered successfully ! Please Verify Email !",
-          response,
-        });
+    const message = await sendEmailVerificationOTP({ _id: user._id, email });
+    if (!message) {
+      throw new ApiError(500, "Something went wrong! Please try again!");
+    }
+
+    return res.status(200).json(
+      new ResponseHandler(201, message, {
+        _id: user._id,
       })
-      .catch((error) => {
-        res.json({
-          status: 500,
-          message: error?.message || "User registration failed ! Try Again !",
-        });
+    );
+  }
+);
+
+//verify email otp
+export const verifyEmailOTP = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { _id, inputOTP } = req.body;
+    console.log(_id);
+    try {
+      if (!_id || !inputOTP) {
+        throw new ApiError(500, "All fields are required !");
+      }
+
+      const otpDetails = await Otp.findOne({ userId: _id });
+      // console.log(otpDetails);
+      if (!otpDetails) {
+        throw new ApiError(404, "Invalid OTP or email !");
+      }
+
+      // checking if given OTP is valid
+      const isOTPValid = await bcrypt.compare(inputOTP, otpDetails.otp);
+      // console.log(isOTPValid);
+      if (!isOTPValid) {
+        throw new ApiError(409, "Invalid OTP !");
+      }
+
+      // Check if the OTP has expired
+      if (otpDetails.expiresAt.getTime() < Date.now()) {
+        throw new ApiError(409, "OTP has expired !");
+      }
+
+      await Otp.deleteOne({ userId: _id });
+
+      const user = await TempUser.findById(_id);
+      const username = generateFromEmail(user.email, 3);
+
+      //storing user's info after verifying email
+      const newUser = await User.create({
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        username,
       });
+
+      // delete the user from tempUser
+      await TempUser.deleteMany({ _id: user._id });
+
+      return res.status(200).json(
+        new ResponseHandler(201, "OTP Verified successfully !", {
+          _id: newUser._id,
+          email: newUser.email,
+          name: newUser.name,
+          username: newUser.username,
+        })
+      );
+    } catch (error) {
+      throw new ApiError(
+        500,
+        "Something went wrong ! Email OTP Verification failed !"
+      );
+    }
   }
 );
 
@@ -121,7 +214,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   //checking if the user exists or not
   const user = await User.findOne({ email });
   if (!user) {
-    throw new ApiError(409, "User not exists ! Please register !");
+    throw new ApiError(409, "User not exists ! Please create an account !");
   }
 
   //checking if given password is valid
@@ -147,38 +240,43 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
   return res
     .status(200)
-    .cookie("userAccessToken", accessToken, options)
-    .cookie("userRefreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
-      new ResponseHandler(201, "User logged in successfully", loggedInUser)
+      new ResponseHandler(201, "User logged in successfully", {
+        user: loggedInUser,
+        token: accessToken,
+      })
     );
 });
 
 //logout user
-export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      $unset: {
-        refreshToken: 1,
+export const logoutUser = asyncHandler(
+  async (req: AuthenticatedRequest, res: Response) => {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $unset: {
+          refreshToken: 1,
+        },
       },
-    },
-    {
-      new: true,
-    }
-  );
+      {
+        new: true,
+      }
+    );
 
-  const options = {
-    httpOnly: true,
-    secure: false,
-  };
+    const options = {
+      httpOnly: true,
+      secure: false,
+    };
 
-  return res
-    .status(200)
-    .clearCookie("userAccessToken", options)
-    .clearCookie("userRefreshToken", options)
-    .json(new ResponseHandler(200, "User logged Out", {}));
-});
+    return res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json(new ResponseHandler(200, "User logged Out", {}));
+  }
+);
 
 //refresh access token
 export const refreshAccessToken = asyncHandler(

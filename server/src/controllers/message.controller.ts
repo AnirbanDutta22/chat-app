@@ -3,9 +3,10 @@ import asyncHandler from "../utils/asyncHandler";
 import { ValidationError } from "../utils/customErrorHandler";
 import ResponseHandler from "../utils/responseHandler";
 import Message from "../models/message.model";
+import { AuthenticatedRequest } from "../types/auth.types";
 
 export const getAllMessages = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user._id;
     const { chatId } = req.body;
 
