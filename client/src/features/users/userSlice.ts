@@ -1,28 +1,44 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { createSlice } from "@reduxjs/toolkit";
-import { User } from "../../types";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface UserState {
-  user: User | null;
-  loading: boolean;
-  error: any | null;
+  user: {
+    name: string;
+    username: string;
+    email: string;
+    avatar?: string;
+  } | null;
+  status: "idle" | "loading" | "succeeded" | "failed";
+  error?: string;
 }
 
+// Initial State
 const initialState: UserState = {
   user: null,
-  loading: false,
-  error: null,
+  status: "idle",
 };
 
-export const userSlice = createSlice({
+// User Slice
+const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    //
+    fetchUserProfile: (
+      state,
+      action: PayloadAction<{
+        name: string;
+        username: string;
+        email: string;
+        avatar?: string;
+      }>
+    ) => {
+      state.status = "succeeded";
+      state.user = action.payload;
+    },
+    clearUserProfile: (state) => {
+      state.user = null;
+    },
   },
 });
 
-// eslint-disable-next-line no-empty-pattern
-export const {} = userSlice.actions;
-
+export const { fetchUserProfile, clearUserProfile } = userSlice.actions;
 export default userSlice.reducer;
