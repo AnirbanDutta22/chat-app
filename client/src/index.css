@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @utility message-bubble {
   max-width: 100%;
   border-radius: theme(borderRadius.lg);
@@ -39,6 +41,13 @@
   margin-inline: auto;
   background-color: theme(colors.white);
   box-shadow: theme(boxShadow.lg);
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
+@utility scrollbar-thumb-gray-300 {
+  scrollbar-color: #d1d5db transparent;
 }
 
 @theme {
