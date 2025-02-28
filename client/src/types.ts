@@ -35,3 +35,14 @@ export interface User {
   avatar: string;
   status: string;
 }
+
+export interface Group {
+  id: string;
+  name: string;
+  members: number;
+  lastMessage: string;
+  timestamp: number;
+  unreadCount: number;
+  avatar: string;
+  isTyping: boolean;
+}

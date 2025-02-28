@@ -1,11 +1,11 @@
 // src/components/ChatWindow.tsx (updated)
 import { useState } from "react";
-import { Chat, Message } from "../../types";
+import { Chat, Group, Message } from "../../types";
 import { MessageList } from "./MessageList";
 import { InputArea } from "./InputArea";
 import { ChatHeader } from "./ChatHeader";
 
-export const ChatWindow = ({ chat }: { chat: Chat | null }) => {
+export const ChatWindow = ({ chat }: { chat: Chat | Group }) => {
   const [messages, setMessages] = useState<Message[]>([]);
 
   const handleSend = async (text: string) => {
@@ -31,7 +31,7 @@ export const ChatWindow = ({ chat }: { chat: Chat | null }) => {
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 bg-white dark:bg-gray-900 flex flex-col overflow-hidden">
       <ChatHeader chat={chat} />
       <MessageList messages={messages} />
       {chat && <InputArea onSend={handleSend} />}

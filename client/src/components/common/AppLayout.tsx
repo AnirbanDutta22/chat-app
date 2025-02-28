@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ChatList } from "../chat/ChatList";
 import { ChatWindow } from "../chat/ChatWindow";
-import { Chat } from "../../types";
+import { Chat, Group } from "../../types";
 
 const mockChats: Chat[] = [
   {
@@ -12,7 +12,7 @@ const mockChats: Chat[] = [
     timestamp: Date.now() - 3600000,
     unreadCount: 2,
     isOnline: false,
-    avatar: "https://example.com/avatar1.jpg",
+    avatar: "",
     isTyping: false,
   },
   {
@@ -22,10 +22,23 @@ const mockChats: Chat[] = [
     timestamp: Date.now() - 3600000,
     unreadCount: 1,
     isOnline: true,
-    avatar: "https://example.com/avatar1.jpg",
+    avatar: "",
     isTyping: true,
   },
   // Add more mock chats...
+];
+
+const mockGroups: Group[] = [
+  {
+    id: "4",
+    name: "Adda group",
+    lastMessage: "Hey, how are you?",
+    timestamp: Date.now() - 3600000,
+    unreadCount: 2,
+    avatar: "",
+    isTyping: false,
+    members: 3,
+  },
 ];
 
 export const AppLayout = () => {
@@ -35,11 +48,15 @@ export const AppLayout = () => {
     <div className="flex h-screen bg-white">
       <ChatList
         chats={mockChats}
+        groups={mockGroups}
         selectedChatId={selectedChatId}
         onSelectChat={setSelectedChatId}
       />
       <ChatWindow
-        chat={mockChats.find((c) => c.id === selectedChatId) || null}
+        chat={
+          mockChats.find((c) => c.id === selectedChatId) ||
+          mockGroups.find((c) => c.id === selectedChatId)
+        }
       />
     </div>
   );

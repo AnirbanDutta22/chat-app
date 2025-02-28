@@ -1,53 +1,38 @@
+// src/components/chat/MessageItem.tsx
 import { Message } from "../../types";
 import { cn } from "../../lib/utils";
 import { MessageStatus } from "./MessageStatus";
 
-export const MessageItem = ({
-  message,
-  showAvatar,
-  showTimestamp,
-}: {
-  message: Message;
-  showAvatar: boolean;
-  showTimestamp: boolean;
-}) => {
-  const isSent = message.senderId === "currentUser";
+export const MessageItem = ({ message }: { message: Message }) => {
+  const isSent = message.isSent;
 
   return (
     <div
-      className={`flex ${isSent ? "justify-end" : "justify-start"} mb-2 px-4`}
-    >
-      {!isSent && showAvatar && (
-        <div className="self-end mr-2">
-          <img
-            src={message.senderAvatar}
-            alt={message.senderName}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-        </div>
+      className={cn(
+        "flex px-4",
+        isSent ? "justify-end" : "justify-start",
+        "mb-2 last:mb-4"
       )}
-
+    >
       <div
         className={cn(
-          "max-w-[75%] rounded-lg p-3 text-sm break-words",
+          "max-w-[85%] lg:max-w-[75%] rounded-xl p-3 text-sm break-words",
+          "transition-colors duration-200",
           isSent
-            ? "bg-blue-600 text-white rounded-br-none"
-            : "bg-gray-100 text-gray-900 rounded-bl-none"
+            ? "bg-blue-600 text-white rounded-br-none dark:bg-blue-700"
+            : "bg-gray-100 text-gray-900 rounded-bl-none dark:bg-gray-800 dark:text-gray-100"
         )}
       >
-        <p>{message.text}</p>
-
-        {(showTimestamp || isSent) && (
-          <div className="flex items-center justify-end mt-1 space-x-1">
-            <span className="text-xs opacity-70">
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-            {isSent && <MessageStatus status={message.status} />}
-          </div>
-        )}
+        <p className="leading-relaxed">{message.text}</p>
+        <div className="flex items-center justify-end mt-2 space-x-1.5">
+          <time className="text-xs opacity-70">
+            {new Date(message.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </time>
+          {isSent && <MessageStatus status={message.status} />}
+        </div>
       </div>
     </div>
   );

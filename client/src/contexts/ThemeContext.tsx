@@ -7,10 +7,14 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
+const defaultThemeContext: ThemeContextType = {
+  theme: "light",
+  toggleTheme: () => {}, // No-op function as a placeholder
+};
+
 // Create the context with an initial undefined value
-export const ThemeContext = createContext<ThemeContextType | undefined>(
-  undefined
-);
+export const ThemeContext =
+  createContext<ThemeContextType>(defaultThemeContext);
 
 interface ThemeProviderProps {
   children: ReactNode;
