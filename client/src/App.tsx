@@ -4,6 +4,8 @@ import { AppLayout } from "./components/common/AppLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { HomePage } from "./pages/HomePage";
+import { ChatWindow } from "./components/chat/ChatWindow";
+import { mockChats, mockGroups } from "./components/common/AppLayout";
 
 export default function App() {
   return (
@@ -12,7 +14,19 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/chat" element={<AppLayout />} />
+          <Route path="/chat" element={<AppLayout />}>
+            <Route
+              index
+              element={
+                <ChatWindow
+                  chat={
+                    mockChats.find((c) => c.id === "1") ||
+                    mockGroups.find((c) => c.id === "4")
+                  }
+                />
+              }
+            />
+          </Route>
           <Route path="/" element={<HomePage />} />
         </Routes>
       </BrowserRouter>

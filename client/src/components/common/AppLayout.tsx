@@ -1,10 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 // src/components/AppLayout.tsx
 import { useState } from "react";
 import { ChatList } from "../chat/ChatList";
-import { ChatWindow } from "../chat/ChatWindow";
 import { Chat, Group } from "../../types";
+import { Outlet } from "react-router-dom";
 
-const mockChats: Chat[] = [
+export const mockChats: Chat[] = [
   {
     id: "1",
     name: "John Doe",
@@ -28,7 +29,7 @@ const mockChats: Chat[] = [
   // Add more mock chats...
 ];
 
-const mockGroups: Group[] = [
+export const mockGroups: Group[] = [
   {
     id: "4",
     name: "Adda group",
@@ -52,12 +53,7 @@ export const AppLayout = () => {
         selectedChatId={selectedChatId}
         onSelectChat={setSelectedChatId}
       />
-      <ChatWindow
-        chat={
-          mockChats.find((c) => c.id === selectedChatId) ||
-          mockGroups.find((c) => c.id === selectedChatId)
-        }
-      />
+      <Outlet />
     </div>
   );
 };
