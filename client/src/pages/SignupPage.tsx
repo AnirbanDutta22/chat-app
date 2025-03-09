@@ -11,19 +11,20 @@ import { AppDispatch, RootState } from "../store";
 
 export const SignupPage = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { status } = useSelector((state: RootState) => state?.auth);
+  const { status, error: authError } = useSelector(
+    (state: RootState) => state?.auth
+  );
   const [formData, setFormData] = useState<SignupType>({
     email: "",
     name: "",
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(status);
   const [error, setError] = useState("");
+  const [showOtpForm, setShowOtpForm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(status);
     setError("");
 
     // Validate form data with Zod
@@ -34,66 +35,122 @@ export const SignupPage = () => {
     if (!result.success) {
       // Get the first error message from the Zod error
       setError(result.error.errors[0].message);
-      setIsLoading(status);
       return;
     }
 
     try {
-      dispatch(signup(formData));
+      await dispatch(signup(formData)).unwrap();
+      // On successful signup, show OTP form
+      setShowOtpForm(true);
     } catch (err) {
       console.error(err);
-      setError("Invalid email or password");
-    } finally {
-      setIsLoading(status);
+      setError(authError || "Create account error");
     }
+  };
+
+  const handleSubmitOTP = async (otp: string) => {
+    console.log("Submitted OTP:", otp);
   };
 
   return (
     <AuthLayout>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Name"
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        />
-        <Input
-          label="Email"
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        />
-        <Input
-          label="Password"
-          type="password"
-          value={formData.password}
-          onChange={(e) =>
-            setFormData({ ...formData, password: e.target.value })
-          }
-        />
-        <Input
-          label="Confirm Password"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+      {/* Container for sliding forms */}
+      <div className="relative h-[600px] overflow-hidden">
+        {/* Signup Form */}
+        <div
+          className={`absolute top-0 left-0 w-full transition-transform duration-500 ${
+            showOtpForm ? "-translate-x-full" : "translate-x-0"
+          }`}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="Name"
+              type="text"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={formData.password}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
+            />
+            <Input
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
-          Sign Up
-        </Button>
+            <Button
+              type="submit"
+              isLoading={status}
+              loadingText="Signing up..."
+            >
+              Sign Up
+            </Button>
 
-        <p className="text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Login
-          </Link>
-        </p>
-      </form>
+            <p className="text-center text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                Login
+              </Link>
+            </p>
+          </form>
+        </div>
+
+        {/* OTP Form */}
+        <div
+          className={`absolute top-0 left-0 w-full transition-transform duration-500 ${
+            showOtpForm ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <OtpForm onSubmitOTP={handleSubmitOTP} />
+        </div>
+      </div>
     </AuthLayout>
+  );
+};
+
+type OtpFormProps = {
+  onSubmitOTP: (otp: string) => void;
+};
+
+const OtpForm = ({ onSubmitOTP }: OtpFormProps) => {
+  const [otp, setOtp] = useState("");
+
+  const handleOTPSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmitOTP(otp);
+  };
+
+  return (
+    <form onSubmit={handleOTPSubmit} className="space-y-4">
+      <Input
+        label="Enter OTP"
+        type="text"
+        value={otp}
+        onChange={(e) => setOtp(e.target.value)}
+        required
+      />
+      <Button type="submit">Submit OTP</Button>
+    </form>
   );
 };
