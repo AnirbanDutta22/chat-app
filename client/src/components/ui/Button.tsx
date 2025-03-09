@@ -7,7 +7,7 @@ export const Button = ({
   loadingText,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  isLoading?: boolean;
+  isLoading?: string;
   loadingText?: string;
 }) => (
   <button
@@ -15,9 +15,9 @@ export const Button = ({
       "w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
       className
     )}
-    disabled={isLoading || props.disabled}
+    disabled={isLoading === "loading" || props.disabled}
     {...props}
   >
-    {isLoading ? loadingText : props.children}
+    {isLoading === "loading" ? loadingText : props.children}
   </button>
 );

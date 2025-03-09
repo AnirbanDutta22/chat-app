@@ -4,26 +4,26 @@ import { Input } from "../components/ui/Input";
 import { AuthLayout } from "../components/common/AuthLayout";
 import { Link } from "react-router-dom";
 import { signupSchema } from "../validation/auth"; // Import the centralized schema
-
-type SignupType = {
-  email: string;
-  name: string;
-  password: string;
-};
+import { useDispatch, useSelector } from "react-redux";
+import { signup } from "../features/auth/authSlice";
+import { SignupType } from "../types";
+import { AppDispatch, RootState } from "../store";
 
 export const SignupPage = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { status } = useSelector((state: RootState) => state?.auth);
   const [formData, setFormData] = useState<SignupType>({
     email: "",
     name: "",
     password: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(status);
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsLoading(status);
     setError("");
 
     // Validate form data with Zod
@@ -34,17 +34,17 @@ export const SignupPage = () => {
     if (!result.success) {
       // Get the first error message from the Zod error
       setError(result.error.errors[0].message);
-      setIsLoading(false);
+      setIsLoading(status);
       return;
     }
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      dispatch(signup(formData));
     } catch (err) {
       console.error(err);
       setError("Invalid email or password");
     } finally {
-      setIsLoading(false);
+      setIsLoading(status);
     }
   };
 

@@ -48,3 +48,14 @@ export interface Group {
   avatar: string;
   isTyping: boolean;
 }
+
+export type SignupType = {
+  email: string;
+  name: string;
+  password: string;
+};
+
+export type LoginType = {
+  email: string;
+  password: string;
+};
