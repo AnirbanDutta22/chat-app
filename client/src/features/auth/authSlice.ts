@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { signupAPI, loginAPI, logoutAPI } from "./authAPI";
 import { fetchUserProfile } from "../users/userSlice";
+import { LoginType, SignupType } from "../../types";
 
 interface AuthState {
   token: string | null;
   status: "idle" | "loading" | "succeeded" | "failed";
-  error?: string;
+  error?: string | null;
 }
 
 // Initial State
@@ -18,19 +19,8 @@ const initialState: AuthState = {
 // Signup
 export const signup = createAsyncThunk(
   "auth/signup",
-  async (
-    {
-      name,
-      email,
-      password,
-    }: {
-      name: string;
-      email: string;
-      password: string;
-    },
-    { dispatch }
-  ) => {
-    const response = await signupAPI(name, email, password);
+  async (formData: SignupType, { dispatch }) => {
+    const response = await signupAPI(formData);
     dispatch(fetchUserProfile(response.user)); // Update userSlice with user details
     return response;
   }
@@ -39,11 +29,8 @@ export const signup = createAsyncThunk(
 // Login
 export const login = createAsyncThunk(
   "auth/login",
-  async (
-    { email, password }: { email: string; password: string },
-    { dispatch }
-  ) => {
-    const response = await loginAPI(email, password);
+  async (formData: LoginType, { dispatch }) => {
+    const response = await loginAPI(formData);
     dispatch(fetchUserProfile(response.user)); // Update userSlice with user details
     return response;
   }

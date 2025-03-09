@@ -1,18 +1,11 @@
 // src/features/auth/authAPI.ts
 import { axiosInstance } from "../../lib/axios";
+import { LoginType, SignupType } from "../../types";
 
 // User Signup
-export const signupAPI = async (
-  name: string,
-  email: string,
-  password: string
-) => {
+export const signupAPI = async (formData: SignupType) => {
   try {
-    const response = await axiosInstance.post("/auth/signup", {
-      name,
-      email,
-      password,
-    });
+    const response = await axiosInstance.post("/auth/signup", formData);
     return response.data;
   } catch (error) {
     console.error(error);
@@ -21,12 +14,9 @@ export const signupAPI = async (
 };
 
 // User Login
-export const loginAPI = async (email: string, password: string) => {
+export const loginAPI = async (formData: LoginType) => {
   try {
-    const response = await axiosInstance.post("/auth/login", {
-      email,
-      password,
-    });
+    const response = await axiosInstance.post("/auth/login", formData);
     return response.data;
   } catch (error) {
     console.error(error);
