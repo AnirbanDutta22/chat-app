@@ -4,6 +4,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { AuthLayout } from "../components/common/AuthLayout";
 import { Link } from "react-router-dom";
+import { loginSchema } from "../validation/auth";
 
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -16,8 +17,19 @@ export const LoginPage = () => {
     setIsLoading(true);
     setError("");
 
+    // Validate form data with Zod
+    const result = loginSchema.safeParse({
+      email,
+      password,
+    });
+    if (!result.success) {
+      // Get the first error message from the Zod error
+      setError(result.error.errors[0].message);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // TODO: Add your login API integration
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (err) {
       console.error(err);
@@ -32,22 +44,20 @@ export const LoginPage = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Email"
-          type="email"
+          type="text"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          required
         />
         <Input
           label="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required
         />
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} loadingText="Signing in...">
           Sign In
         </Button>
 

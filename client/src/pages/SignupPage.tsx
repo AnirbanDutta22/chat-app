@@ -1,15 +1,23 @@
-// src/pages/SignupPage.tsx
 import { useState } from "react";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { AuthLayout } from "../components/common/AuthLayout";
 import { Link } from "react-router-dom";
+import { signupSchema } from "../validation/auth"; // Import the centralized schema
+
+type SignupType = {
+  email: string;
+  name: string;
+  password: string;
+};
 
 export const SignupPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState<SignupType>({
+    email: "",
+    name: "",
+    password: "",
+  });
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,8 +26,19 @@ export const SignupPage = () => {
     setIsLoading(true);
     setError("");
 
+    // Validate form data with Zod
+    const result = signupSchema.safeParse({
+      ...formData,
+      confirmPassword,
+    });
+    if (!result.success) {
+      // Get the first error message from the Zod error
+      setError(result.error.errors[0].message);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // TODO: Add your login API integration
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (err) {
       console.error(err);
@@ -35,35 +54,33 @@ export const SignupPage = () => {
         <Input
           label="Name"
           type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
         <Input
           label="Email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
         <Input
           label="Password"
           type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
+          value={formData.password}
+          onChange={(e) =>
+            setFormData({ ...formData, password: e.target.value })
+          }
         />
         <Input
           label="Confirm Password"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          required
         />
 
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        <Button type="submit" isLoading={isLoading}>
+        <Button type="submit" isLoading={isLoading} loadingText="Signing up...">
           Sign Up
         </Button>
 
